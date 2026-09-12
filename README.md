@@ -11,17 +11,47 @@ A command-line tool to shrink PDF file size and convert PDFs to DOCX, JPEG, or P
 - **[python-pptx](https://python-pptx.readthedocs.io/)** — assembles PPTX slides from rendered page images.
 - **[Pillow](https://python-pillow.org/)** — image encoding for the JPEG export path.
 
-This stack was chosen to avoid any external system dependencies (no Ghostscript/LibreOffice install required) while still giving good compression ratios and accurate conversions, all installable via `pip`.
+This stack was chosen to avoid any external system dependencies (no Ghostscript/LibreOffice install required) while still giving good compression ratios and accurate conversions, all installable via `pip`. It's pure Python, so the same install works unchanged on Windows, macOS, and Linux.
+
+The interactive menu deliberately uses plain numbered `input()` prompts rather than an arrow-key/raw-terminal picker (e.g. questionary/prompt_toolkit) — those crash on terminals that don't expose a real console buffer, notably Git Bash's mintty on Windows. Numbered prompts work identically in any terminal on any OS.
 
 ## Install
 
+Global install (recommended) — puts the `pdf-app` command on your PATH so it can be run from any directory:
+
+```bash
+pipx install .          # from a clone of this repo
+# or, once published:
+pipx install pdf-app
+```
+
+Local/dev install:
+
 ```bash
 python -m venv .venv
-.venv\Scripts\activate     # Windows
+.venv\Scripts\activate     # Windows; use `source .venv/bin/activate` on macOS/Linux
 pip install -e .
 ```
 
 ## Usage
+
+Run `pdf-app` with no arguments from any directory to launch the interactive menu:
+
+```
+$ pdf-app
+
+What would you like to do?
+  1. Compress PDF (reduce file size)
+  2. Convert PDF to DOCX (Word)
+  3. Convert PDF to JPEG (one image per page)
+  4. Convert PDF to PPTX (PowerPoint)
+  0. Exit
+Enter choice:
+```
+
+Pick a tool, then pick a file from a paginated list (5 at a time, with `n`/`p` to page forward/back) of every file in the current directory. Selecting a non-PDF file shows an error and lets you pick again. Output is written next to the input as `<name>-<tool>.<ext>` (e.g. `report-compress.pdf`, `report-to-doc.docx`). After each run you're asked whether to continue or exit.
+
+For scripting, the same actions are also available as direct subcommands:
 
 ```bash
 # Shrink a PDF (levels: low, medium, high)
@@ -37,4 +67,4 @@ pdf-app to-jpeg input.pdf -o ./output_images --dpi 150
 pdf-app to-ppt input.pdf -o output.pptx
 ```
 
-Run `pdf-app --help` or `pdf-app <command> --help` for full options.
+Run `pdf-app <command> --help` for full options on any subcommand.

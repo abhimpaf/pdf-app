@@ -9,10 +9,18 @@ from pdfapp.utils import default_output_path, human_size, require_pdf
 app = typer.Typer(
     name="pdf-app",
     help="Reduce PDF file size and convert PDFs to DOCX, JPEG, or PPTX.",
-    no_args_is_help=True,
     add_completion=False,
 )
 console = Console()
+
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """Running `pdf-app` with no command launches an interactive menu."""
+    if ctx.invoked_subcommand is None:
+        from pdfapp.interactive import run_interactive
+
+        run_interactive()
 
 
 @app.command()

@@ -17,15 +17,19 @@ The interactive menu deliberately uses plain numbered `input()` prompts rather t
 
 ## Install
 
-Global install (recommended) — puts the `pdf-app` command on your PATH so it can be run from any directory:
+### Option A: pipx (needs Python, no repo clone required)
 
 ```bash
-pipx install .          # from a clone of this repo
-# or, once published:
-pipx install pdf-app
+pipx install "git+https://github.com/abhimpaf/pdf-app.git"
 ```
 
-Local/dev install:
+This puts a `pdf-app` command on your PATH, runnable from any directory, in an isolated environment that won't conflict with other Python projects.
+
+### Option B: standalone executable (no Python required at all)
+
+Grab the binary for your OS from the project's [GitHub Releases](https://github.com/abhimpaf/pdf-app/releases) page, put it somewhere on your PATH (or just run it from wherever you downloaded it), and run it directly (`./pdf-app` or `pdf-app.exe`). PyInstaller can't cross-compile, so each release only has binaries for the OS(es) they were built on — see `build_scripts/build.sh` to build one yourself for macOS/Linux.
+
+### Local/dev install (from a clone of this repo)
 
 ```bash
 python -m venv .venv

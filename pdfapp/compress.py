@@ -37,13 +37,15 @@ def _downsample_images(doc: fitz.Document, dpi_cap: int, jpeg_quality: int) -> N
             seen_xrefs.add(xref)
 
             try:
+                original_len = len(doc.xref_stream_raw(xref) or b"")
+
                 pixmap = fitz.Pixmap(doc, xref)
                 if pixmap.colorspace is None:
                     continue  # image mask / stencil, not a color image
-                if pixmap.colorspace.n not in (1, 3):
-                    pixmap = fitz.Pixmap(fitz.csRGB, pixmap)
                 if pixmap.alpha:
                     pixmap = fitz.Pixmap(pixmap, 0)
+                if pixmap.colorspace.n not in (1, 3):
+                    pixmap = fitz.Pixmap(fitz.csRGB, pixmap)
 
                 max_dim = max(pixmap.width, pixmap.height)
                 shrink_factor = 0
@@ -54,8 +56,25 @@ def _downsample_images(doc: fitz.Document, dpi_cap: int, jpeg_quality: int) -> N
                     pixmap.shrink(shrink_factor)
 
                 jpeg_bytes = pixmap.tobytes("jpeg", jpg_quality=jpeg_quality)
-                doc.update_stream(xref, jpeg_bytes)
+                if original_len and len(jpeg_bytes) >= original_len:
+                    continue  # re-encoding didn't help; keep the original stream
+
+                # compress=0: the bytes are already JPEG-compressed, so the
+                # default zlib-deflate pass would wrap them a second time
+                # while we mark Filter as plain DCTDecode below, corrupting
+                # the image (viewers try to JPEG-decode zlib-compressed data).
+                doc.update_stream(xref, jpeg_bytes, compress=0)
+                # The image dict's own metadata must match the new stream exactly,
+                # or viewers decode the JPEG bytes against stale dimensions/filters
+                # and the image renders blank or garbled.
                 doc.xref_set_key(xref, "Filter", "/DCTDecode")
+                doc.xref_set_key(xref, "DecodeParms", "null")
+                doc.xref_set_key(xref, "Decode", "null")
+                doc.xref_set_key(xref, "SMask", "null")
+                doc.xref_set_key(xref, "Mask", "null")
+                doc.xref_set_key(xref, "Width", str(pixmap.width))
+                doc.xref_set_key(xref, "Height", str(pixmap.height))
+                doc.xref_set_key(xref, "BitsPerComponent", "8")
                 doc.xref_set_key(xref, "ColorSpace", "/DeviceRGB" if pixmap.colorspace.n == 3 else "/DeviceGray")
             except Exception:
                 continue  # leave this image untouched rather than fail the whole run
